@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/axgle/mahonia"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jinzhu/gorm"
 	"github.com/myself659/gostocks/db"
@@ -20,7 +21,7 @@ import (
 )
 
 type qyitem struct {
-	Num      string    `gorm:"type:varchar(64)"`  // 股票代号
+	Code     string    `gorm:"type:varchar(64)"`  // 股票代号
 	Name     string    `gorm:"type:varchar(128)"` // 股票企业名称
 	MV       float64   // 以亿元为单位,市值
 	Revenue  float64   // 以亿元为单位，收入
@@ -51,6 +52,386 @@ const (
 	PBTag       = "市净率："
 )
 
+type Pos struct {
+	x int
+	y int
+}
+
+var PEPos = Pos{x: 0, y: 1}
+var BVPSPos = Pos{x: 1, y: 0}
+var PBPos = Pos{x: 1, y: 1}
+var RevenuePos = Pos{x: 2, y: 0}
+var RevenueGPos = Pos{x: 2, y: 1}
+var ProfitsPos = Pos{x: 3, y: 0}
+var ProfitsGPos = Pos{x: 3, y: 1}
+var GPPos = Pos{x: 4, y: 0}
+var NPPos = Pos{x: 4, y: 1}
+var ROEPos = Pos{x: 5, y: 0}
+var LEVPos = Pos{x: 5, y: 1}
+var MVPos = Pos{x: 6, y: 1}
+
+func saveName(page *html.Tokenizer, ptoken *html.Token, item *qyitem) bool {
+
+	if ptoken.Type == html.StartTagToken && ptoken.Data == "h2" {
+		for _, attr := range ptoken.Attr {
+			if attr.Key == "class" && attr.Val == "header-title-h2 fl" {
+				tokentype := page.Next()
+				tokentype = tokentype
+				token := page.Token()
+
+				item.Name = token.Data
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func saveCode(page *html.Tokenizer, ptoken *html.Token, item *qyitem) bool {
+
+	if ptoken.Type == html.StartTagToken && ptoken.Data == "b" {
+		for _, attr := range ptoken.Attr {
+			if attr.Key == "class" && attr.Val == "header-title-c fl" {
+				tokentype := page.Next()
+				tokentype = tokentype
+				token := page.Token()
+				enc := mahonia.NewEncoder("gbk")
+				s := strings.TrimSpace(token.Data)
+				s = enc.ConvertString(s)
+				item.Code = s
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func savePE(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 3; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	token := page.Token()
+	fpe, err := strconv.ParseFloat(strings.TrimSpace(token.Data), 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("savePE:", fpe)
+	item.PE = fpe
+
+	return true
+
+}
+func saveBVPS(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 4; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	token := page.Token()
+	enc := mahonia.NewEncoder("gbk")
+	s := strings.TrimSpace(token.Data)
+	cs := strings.TrimPrefix(s, enc.ConvertString("："))
+	f, err := strconv.ParseFloat(cs, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveBVPS:", f)
+	item.BVPS = f
+
+	return true
+}
+
+func savePB(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 3; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	token := page.Token()
+	f, err := strconv.ParseFloat(strings.TrimSpace(token.Data), 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("savePB:", f)
+	item.PB = f
+
+	return true
+
+}
+
+func saveRevenue(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 1; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	enc := mahonia.NewEncoder("gbk")
+	token := page.Token()
+	s := strings.TrimSpace(token.Data)
+	as := strings.Split(s, enc.ConvertString("："))
+	if len(as) != 2 {
+		return false
+	}
+	var factor float64 = 1.0
+	var fs string
+	// 去掉中文
+
+	if strings.HasSuffix(as[1], enc.ConvertString("亿")) {
+		fs = strings.TrimSuffix(as[1], enc.ConvertString("亿"))
+
+	} else if strings.HasSuffix(as[1], enc.ConvertString("万")) {
+		factor = 0.0001
+		fs = strings.TrimSuffix(as[1], enc.ConvertString("万"))
+	} else {
+		factor = 0.00000001
+		fs = as[1]
+	}
+	f, err := strconv.ParseFloat(fs, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveRevenue:", f)
+	item.Revenue = f * factor
+
+	return true
+}
+
+func saveRevenueG(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 4; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	token := page.Token()
+	s := strings.TrimSpace(token.Data)
+	enc := mahonia.NewEncoder("gbk")
+	fs := strings.TrimPrefix(s, enc.ConvertString("："))
+	ffs := strings.TrimSuffix(fs, "%")
+	f, err := strconv.ParseFloat(ffs, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveRevenueG:", f)
+	item.RevenueG = f
+
+	return true
+
+}
+
+func saveProfits(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 1; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	enc := mahonia.NewEncoder("gbk")
+	token := page.Token()
+	s := strings.TrimSpace(token.Data)
+	as := strings.Split(s, enc.ConvertString("："))
+	if len(as) != 2 {
+		return false
+	}
+	var factor float64 = 1.0
+	var fs string
+
+	if strings.HasSuffix(as[1], enc.ConvertString("亿")) {
+		fs = strings.TrimSuffix(as[1], enc.ConvertString("亿"))
+
+	} else if strings.HasSuffix(as[1], enc.ConvertString("万")) {
+		factor = 0.0001
+		fs = strings.TrimSuffix(as[1], enc.ConvertString("万"))
+	} else {
+		factor = 0.00000001
+		fs = as[1]
+	}
+
+	f, err := strconv.ParseFloat(fs, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveProfits:", f)
+	item.Profits = f * factor
+
+	return true
+}
+
+func saveProfitsG(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 1; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	token := page.Token()
+	enc := mahonia.NewEncoder("gbk")
+	s := strings.TrimSpace(token.Data)
+	as := strings.Split(s, enc.ConvertString("："))
+	if len(as) != 2 {
+		return false
+	}
+	sf := strings.TrimSuffix(as[1], "%")
+	f, err := strconv.ParseFloat(sf, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveProfitsG:", f)
+	item.ProfitsG = f
+
+	return true
+
+}
+
+func saveGP(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 4; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	token := page.Token()
+	enc := mahonia.NewEncoder("gbk")
+	s := strings.TrimSpace(token.Data)
+	s = strings.TrimPrefix(s, enc.ConvertString("："))
+	s = strings.TrimSuffix(s, "%")
+	f, err := strconv.ParseFloat(s, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveGP:", f)
+	item.GP = f
+	return true
+}
+
+func saveNP(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 1; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	enc := mahonia.NewEncoder("gbk")
+	token := page.Token()
+	s := strings.TrimSpace(token.Data)
+	as := strings.Split(s, enc.ConvertString("："))
+	if len(as) != 2 {
+		return false
+	}
+	sf := strings.TrimSuffix(as[1], "%")
+	f, err := strconv.ParseFloat(sf, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveNP:", f)
+	item.NP = f
+
+	return true
+
+}
+func saveROE(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 6; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	enc := mahonia.NewEncoder("gbk")
+	token := page.Token()
+	s := strings.TrimSpace(token.Data)
+	as := strings.Split(s, enc.ConvertString("："))
+	if len(as) != 2 {
+		return false
+	}
+	sf := strings.TrimSuffix(as[1], "%")
+	f, err := strconv.ParseFloat(sf, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveROE:", f)
+	item.ROE = f
+	return true
+}
+
+func saveLEV(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 1; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	enc := mahonia.NewEncoder("gbk")
+	token := page.Token()
+	s := strings.TrimSpace(token.Data)
+	as := strings.Split(s, enc.ConvertString("："))
+	if len(as) != 2 {
+		return false
+	}
+	sf := strings.TrimSuffix(as[1], "%")
+	f, err := strconv.ParseFloat(sf, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveLEV:", f)
+	item.LEV = f
+	return true
+}
+
+func saveMV(page *html.Tokenizer, item *qyitem) bool {
+	for i := 0; i < 3; i++ {
+		tokentype := page.Next()
+		if tokentype == html.ErrorToken {
+			return false
+		}
+	}
+	enc := mahonia.NewEncoder("gbk")
+	token := page.Token()
+	s := strings.TrimSpace(token.Data)
+
+	var factor float64 = 1.0
+	var fs string
+	// 去掉中文
+	if strings.HasSuffix(s, enc.ConvertString("亿")) {
+		fs = strings.TrimSuffix(s, enc.ConvertString("亿"))
+
+	} else if strings.HasSuffix(s, enc.ConvertString("万")) {
+		factor = 0.0001
+		fs = strings.TrimSuffix(s, enc.ConvertString("万"))
+	} else {
+		factor = 0.00000001
+		fs = s
+	}
+
+	f, err := strconv.ParseFloat(fs, 32)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("saveMV:", f)
+	item.MV = f * factor
+
+	return true
+}
+
 // 获取主板，中小板，创业板的股票的基本情况
 const preUrl = "http://quote.eastmoney.com/"
 
@@ -79,7 +460,7 @@ func isTable(token html.Token) bool {
 	return false
 }
 
-func getNextTable(page *html.Tokenizer) html.Token {
+func getNextTable(page *html.Tokenizer) *html.Token {
 	for {
 		tokentype := page.Next()
 		if tokentype == html.ErrorToken {
@@ -88,7 +469,7 @@ func getNextTable(page *html.Tokenizer) html.Token {
 		token := page.Token()
 
 		if isTable(token) {
-			return token
+			return &token
 		}
 	}
 }
@@ -100,7 +481,7 @@ func isTableTr(token html.Token) bool {
 	return false
 }
 
-func getNextTableTr(page *html.Tokenizer) html.Token {
+func getNextTableTr(page *html.Tokenizer) *html.Token {
 
 	for {
 		tokentype := page.Next()
@@ -110,7 +491,7 @@ func getNextTableTr(page *html.Tokenizer) html.Token {
 		token := page.Token()
 
 		if isTableTr(token) {
-			return token
+			return &token
 		}
 	}
 
@@ -124,7 +505,7 @@ func isTableTd(token html.Token) bool {
 
 }
 
-func getNextTableTd(page *html.Tokenizer) html.Token {
+func getNextTableTd(page *html.Tokenizer) *html.Token {
 
 	for {
 		tokentype := page.Next()
@@ -134,7 +515,7 @@ func getNextTableTd(page *html.Tokenizer) html.Token {
 		token := page.Token()
 
 		if isTableTd(token) {
-			return token
+			return &token
 		}
 	}
 
@@ -145,57 +526,6 @@ func isEndDiv(token html.Token) bool {
 		return true
 	}
 	return false
-}
-
-func getPE(page *html.Tokenizer) (bool, float64) {
-
-	for i := 0; i < 2; i++ {
-		tokentype := page.Next()
-		if tokentype == html.ErrorToken {
-			return false, 0.0
-		}
-	}
-	token := page.Token()
-	fpe, err := strconv.ParseFloat(strings.TrimSpace(token.Data), 32)
-	if err != nil {
-		fmt.Println(err)
-		return false, 0.0
-	}
-	return true, fpe
-}
-
-func getPB(page *html.Tokenizer) (bool, float64) {
-
-	for i := 0; i < 2; i++ {
-		tokentype := page.Next()
-		if tokentype == html.ErrorToken {
-			return false, 0.0
-		}
-	}
-	token := page.Token()
-	fpe, err := strconv.ParseFloat(strings.TrimSpace(token.Data), 32)
-	if err != nil {
-		fmt.Println(err)
-		return false, 0.0
-	}
-	return true, fpe
-}
-
-func getBVPS(page *html.Tokenizer) (bool, float64) {
-	for i := 0; i < 2; i++ {
-		tokentype := page.Next()
-		if tokentype == html.ErrorToken {
-			return false, 0.0
-		}
-	}
-	token := page.Token()
-	fpe, err := strconv.ParseFloat(strings.TrimSpace(token.Data), 32)
-	if err != nil {
-		fmt.Println(err)
-		return false, 0.0
-	}
-	return true, fpe
-
 }
 
 func getQYItem(url string, impl db.Impl) {
@@ -223,34 +553,100 @@ func getQYItem(url string, impl db.Impl) {
 	defer resp.Body.Close()
 
 	page := html.NewTokenizer(breader)
-	var num_mb10 int = 0
 	var item qyitem
 	var ntr int = 0
-	var ntd int = 0
-	fmt.Println(PETag)
+	var temppos Pos
+	var hasSaveName bool = false
+	var hasSaveCode bool = false
 	for {
 		tokentype := page.Next()
 		if tokentype == html.ErrorToken {
 			return
 		}
+
 		token := page.Token()
-
 		if isTable(token) {
+			for {
+				token := getNextTableTr(page)
+				if token == nil {
+					return
+				}
 
-			if isTableTr(token) {
+				for i := 0; i < 2; i++ {
+					token := getNextTableTd(page)
+					if token == nil {
+						return
+					}
+					temppos.x = ntr
+					temppos.y = i
+					switch temppos {
+					case PEPos:
+						{
+							savePE(page, &item)
+						}
+					case PBPos:
+						{
+							savePB(page, &item)
+						}
+					case BVPSPos:
+						{
+							saveBVPS(page, &item)
+						}
+					case RevenuePos:
+						{
+							saveRevenue(page, &item)
+						}
+					case RevenueGPos:
+						{
+							saveRevenueG(page, &item)
+						}
+					case ProfitsPos:
+						{
+							saveProfits(page, &item)
+						}
+					case ProfitsGPos:
+						{
+							saveProfitsG(page, &item)
+						}
+					case GPPos:
+						{
+							saveGP(page, &item)
+						}
+					case NPPos:
+						{
+							saveNP(page, &item)
+						}
+					case ROEPos:
+						{
+							saveROE(page, &item)
+						}
+					case LEVPos:
+						{
+							saveLEV(page, &item)
+						}
+					case MVPos:
+						{
+							saveMV(page, &item)
+							impl.DB.Save(item)
+							return
+						}
+					}
+
+				}
 				ntr++
-				ntd = 0
-			}
-			if ifTableTd(token) {
-
-				// 进行处理
-				ntd++
 
 			}
 
+		} else {
+			if hasSaveName == false {
+				hasSaveCode = saveName(page, &token, &item)
+			}
+			if hasSaveCode == false {
+				hasSaveCode = saveCode(page, &token, &item)
+			}
 		}
 		/*
-			fmt.Println("start -------")
+			fmt.Println("start #####")
 			fmt.Println("Type:", token.Type)
 			fmt.Println("DataAtom:", token.DataAtom)
 			fmt.Println("Data:", token.Data)
@@ -259,912 +655,35 @@ func getQYItem(url string, impl db.Impl) {
 			}
 			fmt.Println("end -------")
 		*/
-		/*
-			if isStartMb10(token) {
-				num_mb10++
-				fmt.Println(num_mb10)
-			}
-			//定位数据
-			if num_mb10 == 2 {
-				// 更好地解析
 
-				if token.Type == html.TextToken {
-					fmt.Println(token.Data)
-				}
-				data := strings.TrimSpace(token.Data)
-				if PETag == data {
-					fmt.Println("match")
-					ok, fpe := getPE(page)
-					if !ok {
-						return
-					}
-
-					item.PE = fpe
-					fmt.Println(fpe)
-				}
-				if strings.Contains(data, PETag) {
-					//获得pe
-					ok, fpe := getPE(page)
-					if !ok {
-						return
-					}
-
-					item.PE = fpe
-					fmt.Println(fpe)
-					continue
-				}
-
-				if strings.Contains(data, PBTag) {
-					//获得PB
-					ok, fpb := getPB(page)
-					if !ok {
-						return
-					}
-
-					item.PE = fpb
-					fmt.Println(fpb)
-					continue
-				}
-
-				if strings.Contains(data, BVPSTag) {
-					ok, fbvps := getBVPS(page)
-					if !ok {
-						return
-					}
-					item.BVPS = fbvps
-				}
-
-			}
-		*/
 	}
 }
 
 func Run() {
 	// 也不用高级，一个个来就行了
-	ok, i := db.Init("mysql", "root", "dbstar", "127.0.0.1:3306", "test3")
+	ok, impl := db.Init("mysql", "root", "dbstar", "127.0.0.1:3306", "test3")
 	if ok == false {
 		log.Fatal("db init failed")
 		return
 	}
-	db.InitSchema(i, &qyitem{})
+	db.InitSchema(impl, &qyitem{})
 
-	url := preUrl + "sz300017.html"
+	//创业板
+	for i := 300000; i < 400000; i++ {
+		url := preUrl + "sz" + strconv.Itoa(i) + ".html"
+		getQYItem(url, impl)
+	}
 
-	getQYItem(url, i)
+	// 中小板
+	for i := 0; i < 300000; i++ {
+		url := preUrl + "sz" + fmt.Sprintf("%06d", i) + ".html"
+		getQYItem(url, impl)
+	}
+
+	// 主板
+	for i := 600000; i < 700000; i++ {
+		url := preUrl + "sh" + strconv.Itoa(i) + ".html"
+		getQYItem(url, impl)
+	}
 
 }
-
-/*
-数据格式
-*/
-
-/*
-start -------
-Type: StartTag
-DataAtom: div
-Data: div
-key: class value: box-x1 mb10
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: div
-Data: div
-key: class value: pad5
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: table
-Data: table
-key: class value: line23 w100p text-indent3 bt txtUL
-key: id value: rtp2
-key: cellspacing value: 0
-key: cellpadding value: 0
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tbody
-Data: tbody
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: StartTag
-DataAtom: a
-Data: a
-key: href value: http://data.eastmoney.com/bbsj/300017.html
-key: target value: _blank
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 收益
-end -------
-start -------
-Type: EndTag
-DataAtom: a
-Data: a
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: (
-end -------
-start -------
-Type: StartTag
-DataAtom: span
-Data: span
-key: title value: 第二季度
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 二
-end -------
-start -------
-Type: EndTag
-DataAtom: span
-Data: span
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: )：0.733
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: PE(动)： # 向右移动两个
-end -------
-
-start -------
-Type: StartTag
-DataAtom: span
-Data: span
-key: id value: gt6_2
-end -------
-
-start -------
-Type: Text
-DataAtom:
-Data: 47.97
-end -------
-
-
-start -------
-Type: EndTag
-DataAtom: span
-Data: span
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: StartTag
-DataAtom: a
-Data: a
-key: href value: http://data.eastmoney.com/bbsj/300017.html
-key: target value: _blank
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 净资产  #向后移动两个token
-end -------
-
-start -------
-Type: EndTag
-DataAtom: a
-Data: a
-end -------
-
-start -------
-Type: Text
-DataAtom:
-Data: ：8.212
-end -------
-
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-
-start -------
-Type: Text
-DataAtom:
-Data: 市净率：  #向后移动两个token
-end -------
-
-start -------
-Type: StartTag
-DataAtom: span
-Data: span
-key: id value: gt13_2
-end -------
-
-start -------
-Type: Text
-DataAtom:
-Data: 8.56
-end -------
-
-
-start -------
-Type: EndTag
-DataAtom: span
-Data: span
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 营收：20.56亿
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: StartTag
-DataAtom: a
-Data: a
-key: href value: http://data.eastmoney.com/bbsj/300017.html
-key: target value: _blank
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 同比
-end -------
-start -------
-Type: EndTag
-DataAtom: a
-Data: a
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: ：66.24%
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 净利润：5.86亿
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 同比：81.78%
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: StartTag
-DataAtom: a
-Data: a
-key: href value: http://data.eastmoney.com/bbsj/300017.html
-key: target value: _blank
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 毛利率
-end -------
-start -------
-Type: EndTag
-DataAtom: a
-Data: a
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: ：43.61%
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 净利率：28.45%
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: StartTag
-DataAtom: a
-Data: a
-key: href value: http://data.eastmoney.com/bbsj/300017.html
-key: target value: _blank
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: ROE
-end -------
-start -------
-Type: StartTag
-DataAtom: b
-Data: b
-key: title value: 净资产收益率
-key: class value: hxsjccsyl
-end -------
-start -------
-Type: EndTag
-DataAtom: b
-Data: b
-end -------
-start -------
-Type: EndTag
-DataAtom: a
-Data: a
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: ：12.81%
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 负债率：12.80%
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-key: title value: 7.99亿
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 总股本：7.99亿
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 总值：
-end -------
-start -------
-Type: StartTag
-DataAtom: span
-Data: span
-key: id value: gt7_2
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 562.0亿
-end -------
-start -------
-Type: EndTag
-DataAtom: span
-Data: span
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-key: title value: 5.12亿
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 流通股：5.12亿
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 流值：
-end -------
-start -------
-Type: StartTag
-DataAtom: span
-Data: span
-key: id value: gt14_2
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 360.1亿
-end -------
-start -------
-Type: EndTag
-DataAtom: span
-Data: span
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-key: colspan value: 2
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 每股未分配利润：2.387元
-end -------
-start -------
-Type: EndTag
-DataAtom: td
-Data: td
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: EndTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: tr
-Data: tr
-end -------
-start -------
-Type: Text
-DataAtom:
-Data:
-
-end -------
-start -------
-Type: StartTag
-DataAtom: td
-Data: td
-key: colspan value: 2
-key: class value: pb3
-end -------
-start -------
-Type: Text
-DataAtom:
-Data: 上市时间：2009-10-30
-end -------
-*/
