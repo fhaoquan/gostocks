@@ -1,0 +1,839 @@
+/*
+数据格式
+*/
+
+/*
+start -------
+Type: StartTag
+DataAtom: div
+Data: div
+key: class value: box-x1 mb10
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: div
+Data: div
+key: class value: pad5
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: table
+Data: table
+key: class value: line23 w100p text-indent3 bt txtUL
+key: id value: rtp2
+key: cellspacing value: 0
+key: cellpadding value: 0
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tbody
+Data: tbody
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: StartTag
+DataAtom: a
+Data: a
+key: href value: http://data.eastmoney.com/bbsj/300017.html
+key: target value: _blank
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 收益
+end -------
+start -------
+Type: EndTag
+DataAtom: a
+Data: a
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: (
+end -------
+start -------
+Type: StartTag
+DataAtom: span
+Data: span
+key: title value: 第二季度
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 二
+end -------
+start -------
+Type: EndTag
+DataAtom: span
+Data: span
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: )：0.733
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data: PE(动)： # 向右移动两个
+end -------
+
+start -------
+Type: StartTag
+DataAtom: span
+Data: span
+key: id value: gt6_2
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data: 47.97
+end -------
+
+
+start -------
+Type: EndTag
+DataAtom: span
+Data: span
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: StartTag
+DataAtom: a
+Data: a
+key: href value: http://data.eastmoney.com/bbsj/300017.html
+key: target value: _blank
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 净资产  #向后移动两个token
+end -------
+
+start -------
+Type: EndTag
+DataAtom: a
+Data: a
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data: ：8.212
+end -------
+
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data: 市净率：  #向后移动两个token
+end -------
+
+start -------
+Type: StartTag
+DataAtom: span
+Data: span
+key: id value: gt13_2
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data: 8.56
+end -------
+
+
+start -------
+Type: EndTag
+DataAtom: span
+Data: span
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 营收：20.56亿
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: StartTag
+DataAtom: a
+Data: a
+key: href value: http://data.eastmoney.com/bbsj/300017.html
+key: target value: _blank
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 同比
+end -------
+start -------
+Type: EndTag
+DataAtom: a
+Data: a
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: ：66.24%
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 净利润：5.86亿
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 同比：81.78%
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: StartTag
+DataAtom: a
+Data: a
+key: href value: http://data.eastmoney.com/bbsj/300017.html
+key: target value: _blank
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 毛利率
+end -------
+start -------
+Type: EndTag
+DataAtom: a
+Data: a
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: ：43.61%
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 净利率：28.45%
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: StartTag
+DataAtom: a
+Data: a
+key: href value: http://data.eastmoney.com/bbsj/300017.html
+key: target value: _blank
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: ROE
+end -------
+start -------
+Type: StartTag
+DataAtom: b
+Data: b
+key: title value: 净资产收益率
+key: class value: hxsjccsyl
+end -------
+start -------
+Type: EndTag
+DataAtom: b
+Data: b
+end -------
+start -------
+Type: EndTag
+DataAtom: a
+Data: a
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: ：12.81%
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 负债率：12.80%
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+key: title value: 7.99亿
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 总股本：7.99亿
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data: 总值：
+end -------
+
+start -------
+Type: StartTag
+DataAtom: span
+Data: span
+key: id value: gt7_2
+end -------
+
+start -------
+Type: Text
+DataAtom:
+Data: 562.0亿
+end -------
+
+start -------
+Type: EndTag
+DataAtom: span
+Data: span
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+key: title value: 5.12亿
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 流通股：5.12亿
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 流值：
+end -------
+start -------
+Type: StartTag
+DataAtom: span
+Data: span
+key: id value: gt14_2
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 360.1亿
+end -------
+start -------
+Type: EndTag
+DataAtom: span
+Data: span
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+key: colspan value: 2
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 每股未分配利润：2.387元
+end -------
+start -------
+Type: EndTag
+DataAtom: td
+Data: td
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: EndTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: tr
+Data: tr
+end -------
+start -------
+Type: Text
+DataAtom:
+Data:
+
+end -------
+start -------
+Type: StartTag
+DataAtom: td
+Data: td
+key: colspan value: 2
+key: class value: pb3
+end -------
+start -------
+Type: Text
+DataAtom:
+Data: 上市时间：2009-10-30
+end -------
+*/

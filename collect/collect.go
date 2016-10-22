@@ -8,11 +8,13 @@ import (
 	"github.com/axgle/mahonia"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jinzhu/gorm"
+	"github.com/myself659/gostocks/csv"
 	"github.com/myself659/gostocks/db"
 	"golang.org/x/net/html"
 	_ "io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	_ "os"
 	"strconv"
@@ -21,21 +23,59 @@ import (
 )
 
 type qyitem struct {
-	Code     string    `gorm:"type:varchar(64)"`  // 股票代号
-	Name     string    `gorm:"type:varchar(128)"` // 股票企业名称
-	MV       float64   // 以亿元为单位,市值
-	Revenue  float64   // 以亿元为单位，收入
-	RevenueG float64   //营收同比增长
-	Profits  float64   // 以亿元为单位，纯利润
-	ProfitsG float64   // 纯利润同比增长
-	PE       float64   // 市盈率
-	PB       float64   // 市净率
-	GP       float64   // 毛利率
-	NP       float64   // 净利率
-	ROE      float64   // 净资产收益率
-	BVPS     float64   // 每股资资产
-	date     time.Time // 收集时间
-	LEV      float64   // 负债率
+	Code       string    `gorm:"type:varchar(64)"`  // 股票代号
+	Name       string    `gorm:"type:varchar(128)"` // 股票企业名称
+	MV         float64   // 以亿元为单位,市值
+	Revenue    float64   // 以亿元为单位，收入
+	RevenueG   float64   //营收同比增长
+	Profits    float64   // 以亿元为单位，纯利润
+	ProfitsG   float64   // 纯利润同比增长
+	PE         float64   // 市盈率
+	PB         float64   // 市净率
+	GP         float64   // 毛利率
+	NP         float64   // 净利率
+	ROE        float64   // 净资产收益率
+	BVPS       float64   // 每股资资产
+	date       time.Time // 收集时间
+	LEV        float64   // 负债率
+	URL        string    // 对应url地址
+	MarketTime string    //上市时间
+}
+
+var title = []string{
+	"股票代码",
+	"企业名字",
+	"市值",
+	"营收",
+	"营收同比增长",
+	"纯利润",
+	"纯利润同比增长",
+	"市盈率",
+	"市净率",
+	"毛利率",
+	"净利率",
+	"净资产收益率",
+	"每股资资产",
+	"负债率",
+	"URL",
+}
+
+var entitle = []string{
+	"Code",
+	"Name",
+	"MV",
+	"Revenue",
+	"RevenueG",
+	"Profits",
+	"ProfitsG",
+	"PE",
+	"PB",
+	"GP",
+	"NP",
+	"ROE",
+	"BVPS",
+	"LEV",
+	"URL",
 }
 
 const (
@@ -69,6 +109,11 @@ var NPPos = Pos{x: 4, y: 1}
 var ROEPos = Pos{x: 5, y: 0}
 var LEVPos = Pos{x: 5, y: 1}
 var MVPos = Pos{x: 6, y: 1}
+
+func fix(fv float64, a float64) float64 {
+	fr := math.Floor((fv / a)) * a
+	return fr
+}
 
 func saveName(page *html.Tokenizer, ptoken *html.Token, item *qyitem) bool {
 
@@ -122,7 +167,7 @@ func savePE(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("savePE:", fpe)
-	item.PE = fpe
+	item.PE = fix(fpe, 0.001)
 
 	return true
 
@@ -144,7 +189,7 @@ func saveBVPS(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveBVPS:", f)
-	item.BVPS = f
+	item.BVPS = fix(f, 0.001)
 
 	return true
 }
@@ -163,7 +208,7 @@ func savePB(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("savePB:", f)
-	item.PB = f
+	item.PB = fix(f, 0.001)
 
 	return true
 
@@ -203,7 +248,7 @@ func saveRevenue(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveRevenue:", f)
-	item.Revenue = f * factor
+	item.Revenue = fix(f*factor, 0.001)
 
 	return true
 }
@@ -226,7 +271,7 @@ func saveRevenueG(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveRevenueG:", f)
-	item.RevenueG = f
+	item.RevenueG = fix(f, 0.001)
 
 	return true
 
@@ -266,7 +311,7 @@ func saveProfits(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveProfits:", f)
-	item.Profits = f * factor
+	item.Profits = fix(f*factor, 0.001)
 
 	return true
 }
@@ -292,7 +337,7 @@ func saveProfitsG(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveProfitsG:", f)
-	item.ProfitsG = f
+	item.ProfitsG = fix(f, 0.001)
 
 	return true
 
@@ -316,7 +361,7 @@ func saveGP(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveGP:", f)
-	item.GP = f
+	item.GP = fix(f, 0.001)
 	return true
 }
 
@@ -341,7 +386,7 @@ func saveNP(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveNP:", f)
-	item.NP = f
+	item.NP = fix(f, 0.001)
 
 	return true
 
@@ -367,7 +412,7 @@ func saveROE(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveROE:", f)
-	item.ROE = f
+	item.ROE = fix(f, 0.001)
 	return true
 }
 
@@ -392,7 +437,7 @@ func saveLEV(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveLEV:", f)
-	item.LEV = f
+	item.LEV = fix(f, 0.001)
 	return true
 }
 
@@ -427,7 +472,7 @@ func saveMV(page *html.Tokenizer, item *qyitem) bool {
 		return false
 	}
 	fmt.Println("saveMV:", f)
-	item.MV = f * factor
+	item.MV = fix(f*factor, 0.001)
 
 	return true
 }
@@ -528,7 +573,7 @@ func isEndDiv(token html.Token) bool {
 	return false
 }
 
-func getQYItem(url string, impl db.Impl) {
+func getQYItem(url string, impl db.Impl, csvi csv.Impl) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 	}
@@ -627,7 +672,9 @@ func getQYItem(url string, impl db.Impl) {
 					case MVPos:
 						{
 							saveMV(page, &item)
+							item.URL = url
 							impl.DB.Save(item)
+							csvi.Write(item)
 							return
 						}
 					}
@@ -661,29 +708,32 @@ func getQYItem(url string, impl db.Impl) {
 
 func Run() {
 	// 也不用高级，一个个来就行了
-	ok, impl := db.Init("mysql", "root", "dbstar", "127.0.0.1:3306", "test3")
+	ok, impl := db.Init("mysql", "root", "passwd", "127.0.0.1:3306", "test3")
 	if ok == false {
 		log.Fatal("db init failed")
 		return
 	}
 	db.InitSchema(impl, &qyitem{})
 
-	//创业板
-	for i := 300000; i < 400000; i++ {
-		url := preUrl + "sz" + strconv.Itoa(i) + ".html"
-		getQYItem(url, impl)
+	csvi := csv.NewCsv("stock.csv")
+	csvi.Init(entitle)
+	// 主板
+	for i := 600000; i < 609000; i++ {
+		url := preUrl + "sh" + strconv.Itoa(i) + ".html"
+		getQYItem(url, impl, csvi)
 	}
 
 	// 中小板
-	for i := 0; i < 300000; i++ {
+	for i := 0; i < 10000; i++ {
 		url := preUrl + "sz" + fmt.Sprintf("%06d", i) + ".html"
-		getQYItem(url, impl)
+		getQYItem(url, impl, csvi)
 	}
 
-	// 主板
-	for i := 600000; i < 700000; i++ {
-		url := preUrl + "sh" + strconv.Itoa(i) + ".html"
-		getQYItem(url, impl)
+	//创业板
+	for i := 300000; i < 309000; i++ {
+		url := preUrl + "sz" + strconv.Itoa(i) + ".html"
+		getQYItem(url, impl, csvi)
 	}
+	csvi.Close()
 
 }
